@@ -1,0 +1,67 @@
+/dts-v1/;
+/plugin/;
+
+/ {
+    // Architecture for Raspberry Pi 5
+    compatible = "brcm,bcm2712";
+
+    fragment@0 {
+        // Configure GPIO pins 4 and 6 as outputs
+        target = <&gpio>;
+        __overlay__ {
+            control_lcd: control_lcd {
+                brcm,pins = <4 6>;
+                brcm,function = <1 1>; // Output
+            };
+        };
+    };
+
+    fragment@1 {
+        // Target the SPI5 bus
+        target = <&spi5>;
+        __overlay__ {
+            #address-cells = <1>;
+            #size-cells = <0>;
+            
+            // Chip Select on GPIO 12, Active Low
+            cs-gpios = <&gpio 12 1>; 
+            status = "okay";
+
+            panel: panel@0 {
+                // Must match the binary name /lib/firmware/ili9341.bin
+                compatible = "my24in", "panel-mipi-dbi-spi";
+                reg = <0>;
+                
+                // Bind the GPIO pins configured in fragment 0
+                pinctrl-names = "default";
+                pinctrl-0 = <&control_lcd>;
+                
+                // Max stable speed for this SPI bus
+                spi-max-frequency = <32000000>;
+
+                rotation = <90>;
+
+                // Map the Data/Command and Reset pins
+                reset-gpios = <&gpio 4 0>; // Active High
+                dc-gpios = <&gpio 6 0>;    // Active High
+
+                // Physical dimensions for 2.4 inch screen
+                width-mm = <49>;
+                height-mm = <37>;
+
+                panel-timing {
+                    // Standard 2.4 inch resolution
+                    hactive = <240>;
+                    vactive = <320>;
+                    hback-porch = <0>;
+                    vback-porch = <0>;
+                    clock-frequency = <0>;
+                    hfront-porch = <0>;
+                    hsync-len = <0>;
+                    vfront-porch = <0>;
+                    vsync-len = <0>;
+                };
+            };
+        };
+    };
+};
